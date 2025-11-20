@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { supabase, type Profile } from '@/lib/supabase';
+import { supabase, type Profile, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
 export function useAuth() {
@@ -10,15 +10,28 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Se Supabase não estiver configurado, retorna imediatamente
+    if (!isSupabaseConfigured() || !supabase) {
+      setLoading(false);
+      setUser(null);
+      setProfile(null);
+      return;
+    }
+
     // Pegar usuário atual
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
-        loadProfile(user.id);
-      } else {
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        setUser(user);
+        if (user) {
+          loadProfile(user.id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Erro ao obter usuário:', error);
         setLoading(false);
-      }
-    });
+      });
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -35,6 +48,11 @@ export function useAuth() {
   }, []);
 
   const loadProfile = async (userId: string) => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('profiles')

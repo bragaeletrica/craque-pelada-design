@@ -1,6 +1,10 @@
 import { supabase } from './supabase';
 
 export async function signUp(email: string, password: string, fullName: string) {
+  if (!supabase) {
+    throw new Error('Supabase não está configurado. Configure as variáveis de ambiente.');
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -30,6 +34,10 @@ export async function signUp(email: string, password: string, fullName: string) 
 }
 
 export async function signIn(email: string, password: string) {
+  if (!supabase) {
+    throw new Error('Supabase não está configurado. Configure as variáveis de ambiente.');
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -40,16 +48,26 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
+  if (!supabase) {
+    throw new Error('Supabase não está configurado. Configure as variáveis de ambiente.');
+  }
+
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 export async function getCurrentUser() {
+  if (!supabase) return null;
+
   const { data: { user } } = await supabase.auth.getUser();
   return user;
 }
 
 export async function getProfile(userId: string) {
+  if (!supabase) {
+    throw new Error('Supabase não está configurado. Configure as variáveis de ambiente.');
+  }
+
   const { data, error } = await supabase
     .from('profiles')
     .select('*')

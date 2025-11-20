@@ -1,9 +1,45 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Função para verificar se está no ambiente do navegador
+const isBrowser = typeof window !== 'undefined';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Função para verificar se as variáveis estão configuradas
+const hasValidConfig = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return !!(url && key && url.startsWith('https://') && key.length > 20);
+};
+
+// Cliente Supabase com verificação segura
+// Retorna null se não estiver no browser ou se as variáveis não estiverem configuradas
+export const supabase = (isBrowser && hasValidConfig())
+  ? createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+        },
+      }
+    )
+  : null;
+
+// Função helper para verificar se Supabase está configurado
+export const isSupabaseConfigured = () => {
+  return isBrowser && hasValidConfig();
+};
+
+// Função helper para obter cliente Supabase com fallback seguro
+export const getSupabaseClient = () => {
+  if (!isSupabaseConfigured()) {
+    if (isBrowser) {
+      console.warn('⚠️ Supabase não está configurado. Configure as variáveis de ambiente.');
+    }
+    return null;
+  }
+  return supabase;
+};
 
 export type Profile = {
   id: string;
@@ -12,6 +48,9 @@ export type Profile = {
   avatar_url: string | null;
   level: number;
   is_premium: boolean;
+  subscription_tier: 'free' | 'premium_monthly' | 'premium_annual' | null;
+  subscription_status: 'active' | 'canceled' | 'expired' | null;
+  subscription_end_date: string | null;
   total_games: number;
   total_wins: number;
   total_goals: number;
@@ -45,6 +84,7 @@ export type Workout = {
   duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   exercises_count: number;
+  is_premium: boolean;
   created_at: string;
 };
 
@@ -55,6 +95,7 @@ export type WarmupRoutine = {
   exercises_count: number;
   difficulty: 'easy' | 'medium' | 'hard';
   routine_type: 'warmup' | 'cooldown';
+  is_premium: boolean;
   created_at: string;
 };
 

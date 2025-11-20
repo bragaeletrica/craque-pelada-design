@@ -8,10 +8,17 @@ export function useWorkouts() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     loadWorkouts();
   }, []);
 
   const loadWorkouts = async () => {
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from('workouts')
@@ -35,10 +42,17 @@ export function useWarmupRoutines() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     loadRoutines();
   }, []);
 
   const loadRoutines = async () => {
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from('warmup_routines')

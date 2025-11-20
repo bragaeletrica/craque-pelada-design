@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, signUp } from "@/lib/auth";
-import { Trophy, Mail, Lock, User } from "lucide-react";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { Trophy, Mail, Lock, User, AlertCircle } from "lucide-react";
+
+// Força renderização dinâmica para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,9 +17,28 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Não renderiza nada durante SSR/build
+  if (!mounted) {
+    return null;
+  }
+
+  // Verifica se Supabase está configurado apenas no cliente
+  const supabaseConfigured = isSupabaseConfigured();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!supabaseConfigured) {
+      setError("Supabase não está configurado. Configure as variáveis de ambiente.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -46,6 +69,19 @@ export default function LoginPage() {
             Craque da <span className="text-[#00FF00]">Pelada</span>
           </h1>
         </div>
+
+        {/* Aviso se Supabase não estiver configurado */}
+        {!supabaseConfigured && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-200">
+              <p className="font-bold mb-1">Configuração Necessária</p>
+              <p className="text-yellow-300/80">
+                Configure as variáveis de ambiente do Supabase para usar o sistema de autenticação.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Card de Login/Cadastro */}
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
@@ -87,6 +123,7 @@ export default function LoginPage() {
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-[#00FF00]/50 transition-all"
                     placeholder="Seu nome"
                     required={!isLogin}
+                    disabled={!supabaseConfigured}
                   />
                 </div>
               </div>
@@ -105,6 +142,7 @@ export default function LoginPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-[#00FF00]/50 transition-all"
                   placeholder="seu@email.com"
                   required
+                  disabled={!supabaseConfigured}
                 />
               </div>
             </div>
@@ -123,6 +161,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   minLength={6}
+                  disabled={!supabaseConfigured}
                 />
               </div>
             </div>
@@ -135,7 +174,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !supabaseConfigured}
               className="w-full bg-gradient-to-r from-[#00FF00] to-[#00CC00] text-[#0D0D0D] font-bold py-4 rounded-xl hover:shadow-lg hover:shadow-[#00FF00]/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
@@ -149,6 +188,7 @@ export default function LoginPage() {
                 <button
                   onClick={() => setIsLogin(false)}
                   className="text-[#00FF00] hover:underline"
+                  disabled={!supabaseConfigured}
                 >
                   Cadastre-se
                 </button>
@@ -159,6 +199,7 @@ export default function LoginPage() {
                 <button
                   onClick={() => setIsLogin(true)}
                   className="text-[#00FF00] hover:underline"
+                  disabled={!supabaseConfigured}
                 >
                   Faça login
                 </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Home, User, Activity, Dumbbell, BookOpen, 
@@ -24,11 +24,21 @@ type Screen =
   | "insights" 
   | "qa";
 
+// Força renderização dinâmica para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 export default function CraqueDaPelada() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<Screen>("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Mover o redirect para useEffect para evitar setState durante render
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
 
   const handleLogout = async () => {
     try {
@@ -50,6 +60,10 @@ export default function CraqueDaPelada() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   const navigation = [

@@ -8,7 +8,7 @@ export function useGameDiary(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !supabase) {
       setLoading(false);
       return;
     }
@@ -17,6 +17,8 @@ export function useGameDiary(userId: string | undefined) {
   }, [userId]);
 
   const loadGames = async () => {
+    if (!supabase || !userId) return;
+
     try {
       const { data, error } = await supabase
         .from('game_diary')
@@ -35,7 +37,7 @@ export function useGameDiary(userId: string | undefined) {
   };
 
   const addGame = async (game: Omit<GameDiary, 'id' | 'created_at' | 'user_id'>) => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     try {
       const { data, error } = await supabase
